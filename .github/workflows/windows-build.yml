@@ -24,14 +24,13 @@ jobs:
       - name: Import and validate project scripts
         shell: pwsh
         run: |
-          $PSNativeCommandUseErrorActionPreference = $false
           $godot = Get-ChildItem "$env:USERPROFILE\godot\Godot_v4.7.2-stable_win64.exe"
-          $log = Join-Path $env:GITHUB_WORKSPACE "godot-import.log"
-          & $godot.FullName --headless --log-file $log --path . --editor --quit
-          $code = $LASTEXITCODE
-          $details = Get-Content $log -Raw
+          $stdout = Join-Path $env:GITHUB_WORKSPACE "godot-import.stdout.log"
+          $stderr = Join-Path $env:GITHUB_WORKSPACE "godot-import.stderr.log"
+          $process = Start-Process -FilePath $godot.FullName -ArgumentList @("--headless", "--path", ".", "--editor", "--quit") -Wait -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $details = (Get-Content $stdout, $stderr -Raw | Out-String)
           $details | Write-Host
-          if ($code -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
+          if ($process.ExitCode -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
             $summary = $details -replace "%", "%25" -replace "`r", "%0D" -replace "`n", "%0A"
             Write-Output "::error title=Godot script validation failed::$summary"
             exit 1
