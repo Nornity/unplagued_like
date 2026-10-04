@@ -1,0 +1,32 @@
+name: Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  export:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.7.2 and Windows templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        run: godot --headless --path . --editor --quit
+
+      - name: Export Windows executable
+        run: godot --headless --path . --export-release "Windows Desktop" release/TheLastBell.exe
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: TheLastBell-Windows
+          path: release/TheLastBell.exe
+          if-no-files-found: error
