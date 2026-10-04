@@ -19,10 +19,19 @@ jobs:
           include-templates: true
 
       - name: Import project
+        shell: pwsh
         run: godot --headless --path . --editor --quit
 
       - name: Export Windows executable
-        run: godot --headless --path . --export-release "Windows Desktop" release/TheLastBell.exe
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          godot --headless --path . --export-release "Windows Desktop" "$env:GITHUB_WORKSPACE\release\TheLastBell.exe"
+          Get-ChildItem release -Force
+          if (!(Test-Path "$env:GITHUB_WORKSPACE\release\TheLastBell.exe")) {
+            Get-ChildItem -Path . -Filter *.exe -Recurse
+            throw "Godot reported success but did not create release/TheLastBell.exe"
+          }
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
