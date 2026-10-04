@@ -23,14 +23,18 @@ jobs:
 
       - name: Import project
         shell: pwsh
-        run: godot --headless --path . --editor --quit
+        run: |
+          $godot = Get-ChildItem "$env:USERPROFILE\godot\Godot_v4.7.2-stable_win64.exe"
+          & $godot.FullName --headless --path . --editor --quit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Export Windows executable
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force release | Out-Null
+          $godot = Get-ChildItem "$env:USERPROFILE\godot\Godot_v4.7.2-stable_win64.exe"
           $output = Join-Path $env:GITHUB_WORKSPACE "release\TheLastBell.exe"
-          godot --headless --path . --export-release "Windows Desktop" $output
+          & $godot.FullName --headless --path . --export-release "Windows Desktop" $output
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (!(Test-Path $output)) {
             Get-ChildItem -Path . -Filter *.exe -Recurse
