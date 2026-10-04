@@ -13,7 +13,7 @@ var villages_cleansed := 0
 var game_active := false
 var game_over := false
 var husks: Array[Dictionary] = []
-var net_timer := 0.0
+var _net_timer := 0.0
 var menu_layer: CanvasLayer
 var menu_panel: Control
 var menu_overlay: ColorRect

@@ -21,12 +21,19 @@ jobs:
           use-dotnet: false
           include-templates: true
 
-      - name: Import project
+      - name: Import and validate project scripts
         shell: pwsh
         run: |
           $godot = Get-ChildItem "$env:USERPROFILE\godot\Godot_v4.7.2-stable_win64.exe"
-          & $godot.FullName --headless --path . --editor --quit
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $log = Join-Path $env:GITHUB_WORKSPACE "godot-import.log"
+          & $godot.FullName --headless --path . --editor --quit *> $log
+          $code = $LASTEXITCODE
+          Get-Content $log
+          $details = Get-Content $log -Raw
+          if ($code -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
+            Write-Output "::error title=Godot script validation failed::Check godot-import.log in this job."
+            exit 1
+          }
 
       - name: Export Windows executable
         shell: pwsh
