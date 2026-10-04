@@ -28,12 +28,13 @@ jobs:
           $log = Join-Path $env:GITHUB_WORKSPACE "godot-import.log"
           & $godot.FullName --headless --path . --editor --quit *> $log
           $code = $LASTEXITCODE
-          Get-Content $log
           $details = Get-Content $log -Raw
           if ($code -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
-            Write-Output "::error title=Godot script validation failed::Check godot-import.log in this job."
+            $summary = ($details -replace "`r?`n", "%0A")
+            Write-Output "::error title=Godot script validation failed::$summary"
             exit 1
           }
+          Get-Content $log
 
       - name: Export Windows executable
         shell: pwsh
