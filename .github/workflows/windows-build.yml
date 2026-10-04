@@ -25,16 +25,16 @@ jobs:
         shell: pwsh
         run: |
           $godot = Get-ChildItem "$env:USERPROFILE\godot\Godot_v4.7.2-stable_win64.exe"
-          $log = Join-Path $env:GITHUB_WORKSPACE "godot-import.log"
-          & $godot.FullName --headless --path . --editor --quit *> $log
-          $code = $LASTEXITCODE
-          $details = Get-Content $log -Raw
-          if ($code -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
-            $summary = ($details -replace "`r?`n", "%0A")
-            Write-Output "::error title=Godot script validation failed::$summary"
-            exit 1
-          }
-          Get-Content $log
+$PSNativeCommandUseErrorActionPreference = $false
+			$output = & $godot.FullName --headless --path . --editor --quit 2>&1
+			$code = $LASTEXITCODE
+			$details = ($output | Out-String)
+			$details | Write-Host
+			if ($code -ne 0 -or $details -match "SCRIPT ERROR|Parse Error|Failed to load script") {
+				$summary = $details -replace "%", "%25" -replace "`r", "%0D" -replace "`n", "%0A"
+				Write-Output "::error title=Godot script validation failed::$summary"
+				exit 1
+			}
 
       - name: Export Windows executable
         shell: pwsh
