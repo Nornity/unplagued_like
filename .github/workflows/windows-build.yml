@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   push:
 
+permissions:
+  contents: read
+
 jobs:
   export:
     runs-on: windows-latest
@@ -23,15 +26,25 @@ jobs:
         run: godot --headless --path . --editor --quit
 
       - name: Export Windows executable
+        id: export
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force release | Out-Null
-          godot --headless --path . --export-release "Windows Desktop" "$env:GITHUB_WORKSPACE\release\TheLastBell.exe"
-          Get-ChildItem release -Force
-          if (!(Test-Path "$env:GITHUB_WORKSPACE\release\TheLastBell.exe")) {
-            Get-ChildItem -Path . -Filter *.exe -Recurse
-            throw "Godot reported success but did not create release/TheLastBell.exe"
+          $output = Join-Path $env:GITHUB_WORKSPACE "release\TheLastBell.exe"
+          $log = Join-Path $env:GITHUB_WORKSPACE "godot-export.log"
+          & godot --headless --path . --export-release "Windows Desktop" $output 2>&1 | Tee-Object -FilePath $log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+            $details = (Get-Content $log -Raw) -replace "`r?`n", "%0A"
+            Write-Output "::error title=Godot export failed::$details"
+            exit $code
           }
+          if (!(Test-Path $output)) {
+            $details = (Get-Content $log -Raw) -replace "`r?`n", "%0A"
+            Write-Output "::error title=EXE was not created::$details"
+            exit 1
+          }
+          Get-Item $output | Format-List FullName, Length
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
